@@ -76,7 +76,7 @@ function serve() {
   await home.close();
 
   /* ---------- 2. 多视口 ---------- */
-  log('\n[2] 多视口布局（第 2 关 126 张）');
+  log('\n[2] 多视口布局（第 2 关）');
   const VIEWS = [[360, 640], [375, 667], [414, 896], [768, 1024], [1440, 900]];
   for (const [w, h] of VIEWS) {
     const page = await newPage(w, h);
@@ -84,6 +84,7 @@ function serve() {
     await page.waitForFunction('window.G && window.G.debug', { timeout: 15000 });
     await page.evaluate(() => G.debug.startLevel('l2'));
     await new Promise((r) => setTimeout(r, 320));
+    const exp = await page.evaluate(() => G.totalOf(G.LEVELS.l2));
     const m = await page.evaluate(() => {
       const de = document.documentElement;
       const slot = document.querySelector('#slot').getBoundingClientRect();
@@ -103,7 +104,7 @@ function serve() {
     ok(m.scrollH <= m.innerH + 1, w + 'x' + h + ' 无纵向溢出', m.scrollH + '>' + m.innerH);
     ok(m.slotBottom <= m.innerH + 1, w + 'x' + h + ' 槽位在视口内', m.slotBottom.toFixed(1));
     ok(m.slotTop > m.propsBottom - 1, w + 'x' + h + ' 槽位不与道具重叠', m.slotTop.toFixed(1) + '/' + m.propsBottom.toFixed(1));
-    ok(m.tileCount === 126, w + 'x' + h + ' 渲染 126 张牌', m.tileCount);
+    ok(m.tileCount === exp, w + 'x' + h + ' 渲染 ' + exp + ' 张牌', m.tileCount);
     if (w < 500) ok(m.tileW >= 40, w + 'x' + h + ' 牌面宽度 ≥ 40px', m.tileW);
     await page.screenshot({ path: path.join(SHOTS, 'game-l2-' + w + 'x' + h + '.png') });
     await page.close();
@@ -302,13 +303,13 @@ function serve() {
     await new Promise((r) => setTimeout(r, 350));
     consistent(await dom(), '暂存放回后 DOM 与状态一致');
 
-    /* 洗牌 */
-    const before = await page.evaluate(() => G.debug.state().tiles.map((t) => t.pat).join(','));
-    await page.evaluate(() => document.querySelector('.prop[data-prop="shuffle"]').click());
-    await new Promise((r) => setTimeout(r, 350));
-    const afterPats = await page.evaluate(() => G.debug.state().tiles.map((t) => t.pat).join(','));
-    ok(before !== afterPats, '洗牌后图案分配确实变化');
-    consistent(await dom(), '洗牌后 DOM 与状态一致');
+    /* 第 2 关按配置不给洗牌 → 按钮应隐藏（不是显示成灰的「0 次」） */
+    const shuffleHidden = await page.evaluate(() => {
+      const b = document.querySelector('.prop[data-prop="shuffle"]');
+      return !b || getComputedStyle(b).display === 'none';
+    });
+    ok(shuffleHidden, '第 2 关未配置洗牌 → 洗牌按钮隐藏');
+    ok(await page.evaluate(() => G.LEVELS.l2.props.shuffle === 0), '第 2 关洗牌次数确实为 0');
 
     /* 撤销：先点一张「不会凑成三消」的牌 */
     await page.evaluate(() => {
@@ -327,6 +328,27 @@ function serve() {
     consistent(m, '撤销后 DOM 与状态一致');
     ok(m.slot === slotBeforeUndo - 1, '撤销使槽位减少 1 张', m.slot + ' ← ' + slotBeforeUndo);
     await page.screenshot({ path: path.join(SHOTS, 'props-undo-375x667.png') });
+    await page.close();
+  }
+
+  /* ---------- 5b. 洗牌（第 1 关仍有洗牌，第 2 关已按配置取消） ---------- */
+  log('\n[5b] 洗牌与可解性');
+  {
+    const page = await newPage(375, 667);
+    await page.goto(BASE + '/index.html', { waitUntil: 'load' });
+    await page.waitForFunction('window.G && window.G.debug', { timeout: 15000 });
+    await page.evaluate(() => G.debug.startLevel('l1', null, 0x51ed270b));
+    await new Promise((r) => setTimeout(r, 300));
+    const before = await page.evaluate(() => G.debug.state().tiles.map((t) => t.pat).join(','));
+    await page.evaluate(() => document.querySelector('.prop[data-prop="shuffle"]').click());
+    await new Promise((r) => setTimeout(r, 400));
+    const after = await page.evaluate(() => G.debug.state().tiles.map((t) => t.pat).join(','));
+    const changed = before !== after;
+    ok(changed, '洗牌后图案分配确实变化');
+    /* 洗牌必须保证仍有解：按洗牌后重算的清空序走完 */
+    const won = await page.evaluate(() => G.debug.playSolution());
+    ok(won === true, '洗牌后仍能按合法清空序通关');
+    await page.screenshot({ path: path.join(SHOTS, 'props-shuffle-375x667.png') });
     await page.close();
   }
 

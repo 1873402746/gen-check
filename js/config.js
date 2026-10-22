@@ -30,11 +30,15 @@
       seed: 0x5f2a91
     },
     l2: {
-      id: 'l2', name: '第 2 关', desc: '126 张 · 11 种图案 · 地狱难度',
-      /* 难度旋钮是 patterns（图案种类），不是层数：9→11 让细心玩家胜率从 ~10% 降到 ~4%，
-         再加层会让生成器频繁失败（144 张/7 层实测过不了构造校验）。 */
-      layers: 6, counts: [35, 30, 24, 16, 12, 9], patterns: 11, block: 3,
-      props: { undo: 1, move: 1, shuffle: 1 },
+      id: 'l2', name: '第 2 关', desc: '177 张 · 7 层 · 12 种图案 · 地狱难度',
+      /* 难度旋钮按有效性排序：
+         1) randomSeed（main.js 每局现取）—— 盘面不可背，最有效；
+         2) patterns（图案种类）—— 12 是图标上限，全用上；
+         3) tight（块内强制轮转）—— 槽位占用顶到 6，同图案间隔拉到最远；
+         4) 牌数/层数 —— 只加时长，对算得清的玩家几乎无效（实测过）。
+         注意牌数必须是 3 的倍数，否则图案分配不满会直接判负。 */
+      layers: 7, counts: [42, 36, 30, 24, 18, 15, 12], patterns: 12, block: 3, tight: true,
+      props: { undo: 1, move: 1, shuffle: 0 },
       seed: 0x9c31d7
     }
   };
@@ -62,19 +66,21 @@
     return counts;
   }
 
-  /* 无限模式第 n 局的配置（n 从 1 开始） */
+  /* 无限模式第 n 局的配置（n 从 1 开始）
+   * 起点就按「地狱」起步（6 层 / 126 张 / 9 图案），之后每关加压：
+   * 每关 +9 张、每两关 +1 层、每两关 +1 图案，封顶 9 层 / 210 张 / 12 图案。 */
   G.endlessCfg = function (n) {
-    var layers = Math.min(3 + n, 9);
-    var total = Math.min(60 + 6 * n, 180);
+    var layers = Math.min(5 + Math.ceil(n / 2), 9);
+    var total = Math.min(126 + 9 * (n - 1), 210);
     total = total - (total % 3);
-    var patterns = Math.min(5 + Math.ceil(n / 2), 12);
+    var patterns = Math.min(9 + Math.floor((n - 1) / 2), 12);
     var counts = splitCounts(layers, total);
     return {
       id: 'endless', name: '无限第 ' + n + ' 关',
-      desc: total + ' 张 · ' + layers + ' 层',
+      desc: total + ' 张 · ' + layers + ' 层 · ' + patterns + ' 图案',
       layers: layers, counts: counts, patterns: patterns,
-      block: n <= 1 ? 2 : 3,
-      props: { undo: 1, move: 1, shuffle: 1 },
+      block: 3, tight: true,
+      props: { undo: 1, move: 1, shuffle: 0 },
       seed: (G.util.hashStr('endless-' + n) ^ 0x7f4a7c15) >>> 0,
       total: total
     };

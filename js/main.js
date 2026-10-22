@@ -28,9 +28,16 @@
     throw lastErr || new Error('create failed');
   }
 
-  function newGame(cfg, meta) {
+  /* 每局现取随机种子。
+   * 之前这里用的是固定 cfg.seed —— 同一关每次盘面一模一样，玩家死两三次就能背下来，
+   * 这才是「难度上不去」的真正原因。随机化之后收益全靠临场判断。 */
+  function freshSeed() {
+    return (((Date.now() & 0x7fffffff) ^ Math.floor(Math.random() * 0x7fffffff)) >>> 0);
+  }
+
+  function newGame(cfg, meta, seed) {
     var state;
-    try { state = createSafe(cfg); }
+    try { state = createSafe(cfg, seed == null ? freshSeed() : seed); }
     catch (e) {
       G.UI.toast('生成失败，请刷新页面重试');
       console.error(e);
@@ -231,9 +238,9 @@
   G.debug = {
     save: function () { return save; },
     newGame: newGame,
-    startLevel: function (key, n) {
-      if (key === 'endless') return newGame(G.endlessCfg(n || 1), { key: 'endless', endlessN: n || 1 });
-      return newGame(G.LEVELS[key], { key: key });
+    startLevel: function (key, n, seed) {
+      if (key === 'endless') return newGame(G.endlessCfg(n || 1), { key: 'endless', endlessN: n || 1 }, seed);
+      return newGame(G.LEVELS[key], { key: key }, seed);
     },
     state: function () { return G.game.state; },
     metrics: function () { return G.game.state ? G.game.state.metrics : null; },

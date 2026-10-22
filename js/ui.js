@@ -31,12 +31,17 @@
   }
 
   /* ---------------- 首页 ---------------- */
+  /* 首页关卡描述从配置实时算，避免改配置后文案不同步 */
+  function lvDesc(cfg) {
+    return G.totalOf(cfg) + ' 张 · ' + cfg.layers + ' 层 · ' + cfg.patterns + ' 图案';
+  }
+
   function renderHome(save) {
     var list = U.byId('levelList');
     var rows = [
-      { id: 'l1', name: '第 1 关', desc: '36 张 · 轻松热身', badge: '1' },
-      { id: 'l2', name: '第 2 关', desc: '126 张 · 11 种图案 · 地狱难度', badge: '2' },
-      { id: 'endless', name: '无限模式', desc: '每过一关 +1 层，挑战极限', badge: '∞' }
+      { id: 'l1', name: '第 1 关', desc: lvDesc(G.LEVELS.l1) + ' · 热身', badge: '1' },
+      { id: 'l2', name: '第 2 关', desc: lvDesc(G.LEVELS.l2) + ' · 地狱', badge: '2' },
+      { id: 'endless', name: '无限模式', desc: '从地狱起步，每过一关加牌加层', badge: '∞' }
     ];
     var html = '';
     rows.forEach(function (r) {
@@ -180,7 +185,12 @@
       var cnt = U.byId('cnt-' + k);
       if (cnt) cnt.textContent = n;
       var btn = U.qs('.prop[data-prop="' + k + '"]');
-      if (btn) btn.classList.toggle('dim', n <= 0);
+      if (btn) {
+        /* 关卡本身不给这个道具（配置里为 0）→ 直接隐藏，别显示一个灰的「0 次」 */
+        var notGiven = (st.cfg.props[k] || 0) === 0;
+        btn.classList.toggle('hidden', notGiven);
+        btn.classList.toggle('dim', !notGiven && n <= 0);
+      }
     });
   }
 

@@ -170,6 +170,9 @@
       var r = G.gen.rebuildBoard(s, s.shuffleRng, G.C.SLOT_MAX - 1);
       if (!r.ok) return { ok: false, reason: 'fail' };
       s.props.shuffle--;
+      /* 洗牌会产出一条新的合法清空序，写回 state.order，
+         这样「洗牌后是否仍可解」才能被自动化确认 */
+      if (r.order) s.order = r.order;
       return { ok: true, changed: r.changed, peak: r.peak };
     },
 

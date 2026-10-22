@@ -108,8 +108,11 @@
    * 每块最多 B 个图案、共 3B 张牌。块内任意排列下，槽位占用上界 = 2B，
    * 因此 B=3 时峰值必然 ≤ 6 < 7，构造解一定走得通。
    */
-  function assignPlan(order, need, seedCounts, rng, B) {
+  function assignPlan(order, need, seedCounts, rng, B, tight) {
     var remaining = new Map(), assign = new Map(), i = 0, k, v;
+    /* tight=true 时几乎总是用「轮转交织」，槽位占用会顶到 2B 的上界，
+       同图案之间的间隔被拉到最远 —— 纯加难，不影响可解性 */
+    var spinP = tight ? 0.97 : 0.7;
     need.forEach(function (cnt, p) { remaining.set(p, cnt); });
 
     /* 4a. 先把「槽内已有若干张」的图案补齐，让占用立刻回落 */
@@ -148,7 +151,7 @@
       }
       if (!groups.length) break;
       var seq = [], q, r;
-      if (groups.length >= 2 && rng() < 0.7) {
+      if (groups.length >= 2 && rng() < spinP) {
         /* 轮转交织：占用能顶到 2B，难度更高 */
         var base = UU.shuffleArr(groups.slice(), rng);
         for (r = 0; r < 3; r++) for (q = 0; q < base.length; q++) seq.push(base[q]);
@@ -247,7 +250,7 @@
       var need = new Map();
       for (var i = 0; i < counts.length; i++) if (counts[i] > 0) need.set(i, counts[i]);
 
-      var assign = assignPlan(order, need, null, rng, B);
+      var assign = assignPlan(order, need, null, rng, B, cfg.tight);
       if (!assign || assign.size !== total) continue;
       var chk = replayCheck(order, assign, null, G.C.SLOT_MAX);
       if (!chk.ok) continue;
@@ -285,7 +288,7 @@
     for (var attempt = 0; attempt < 40; attempt++) {
       var order = witnessOrderOf(board, rng);
       if (order.length !== board.length) return { ok: false, reason: 'order' };
-      var a = assignPlan(order, new Map(need), seedCounts, rng, B);
+      var a = assignPlan(order, new Map(need), seedCounts, rng, B, state.cfg.tight);
       if (!a || a.size !== board.length) continue;
       var chk = replayCheck(order, a, seedCounts, G.C.SLOT_MAX);
       if (!chk.ok) continue;

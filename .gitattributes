@@ -1,0 +1,4 @@
+# 统一换行符，避免 Windows 提交把 LF 转成 CRLF
+* text=auto eol=lf
+*.png binary
+*.jpg binary

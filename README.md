@@ -2,6 +2,8 @@
 
 一个「羊了个羊」式的堆叠三消小游戏。纯前端、零构建、零依赖、零外部素材，可直接双击 `index.html` 玩，也能直接托管在 GitHub Pages。
 
+**在线试玩：<https://1873402746.github.io/gen-check/>**
+
 ## 玩法
 
 - 点一张**没被上层压住**的牌，它飞进底部 7 格槽位；
@@ -26,6 +28,12 @@ python -m http.server 8080
 ```
 
 ## 部署到 GitHub Pages
+
+已部署完成，仓库 <https://github.com/1873402746/gen-check>，Pages 走 `main` 分支根目录自动构建：
+
+<https://1873402746.github.io/gen-check/>
+
+换到自己的仓库时，重复这三步即可：
 
 1. 把整个目录推到仓库的 `main` 分支（根目录）；
 2. 仓库 `Settings → Pages → Build and deployment`，Source 选 **Deploy from a branch**，分支选 `main`，目录选 **/(root)**；

@@ -52,7 +52,7 @@
     var best = [];
     best.push('第 1 关最佳：' + (save.best.l1 == null ? '--' : U.fmtTime(save.best.l1)));
     best.push('第 2 关最佳：' + (save.best.l2 == null ? '--' : U.fmtTime(save.best.l2)));
-    best.push('无限模式最远：第 ' + (save.best.endless || 0) + ' 关');
+    best.push('无限模式最远：' + (save.best.endless ? '第 ' + save.best.endless + ' 关' : '未开始'));
     U.byId('homeBest').innerHTML = best.join('<br>');
 
     var btn = U.byId('btnSound');

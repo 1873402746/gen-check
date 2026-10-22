@@ -10,16 +10,17 @@
     SAFE_CAP: 6       // 构造解允许占用的最大槽位（留 1 格容错）
   };
 
-  /* 12 个图标，顺序即图案索引 */
+  /* 12 个图案，顺序即图案索引；贴图在 assets/pat/<name>.png */
   G.ICONS = [
-    'carrot', 'cabbage', 'corn', 'tomato', 'mushroom', 'strawberry',
+    'carrot', 'cabbage', 'corn', 'apple', 'mushroom', 'strawberry',
     'sheep', 'eggplant', 'banana', 'peach', 'lemon', 'grape'
   ];
   G.ICON_NAME = {
-    carrot: '胡萝卜', cabbage: '白菜', corn: '玉米', tomato: '番茄',
+    carrot: '胡萝卜', cabbage: '白菜', corn: '玉米', apple: '苹果',
     mushroom: '蘑菇', strawberry: '草莓', sheep: '小羊', eggplant: '茄子',
     banana: '香蕉', peach: '桃子', lemon: '柠檬', grape: '葡萄'
   };
+  G.PAT_SRC = function (name) { return 'assets/pat/' + name + '.png'; };
 
   G.LEVELS = {
     l1: {
@@ -29,8 +30,10 @@
       seed: 0x5f2a91
     },
     l2: {
-      id: 'l2', name: '第 2 关', desc: '126 张 · 地狱难度',
-      layers: 6, counts: [35, 30, 24, 16, 12, 9], patterns: 9, block: 3,
+      id: 'l2', name: '第 2 关', desc: '126 张 · 11 种图案 · 地狱难度',
+      /* 难度旋钮是 patterns（图案种类），不是层数：9→11 让细心玩家胜率从 ~10% 降到 ~4%，
+         再加层会让生成器频繁失败（144 张/7 层实测过不了构造校验）。 */
+      layers: 6, counts: [35, 30, 24, 16, 12, 9], patterns: 11, block: 3,
       props: { undo: 1, move: 1, shuffle: 1 },
       seed: 0x9c31d7
     }

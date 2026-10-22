@@ -35,7 +35,7 @@
     var list = U.byId('levelList');
     var rows = [
       { id: 'l1', name: '第 1 关', desc: '36 张 · 轻松热身', badge: '1' },
-      { id: 'l2', name: '第 2 关', desc: '126 张 · 地狱难度', badge: '2' },
+      { id: 'l2', name: '第 2 关', desc: '126 张 · 11 种图案 · 地狱难度', badge: '2' },
       { id: 'endless', name: '无限模式', desc: '每过一关 +1 层，挑战极限', badge: '∞' }
     ];
     var html = '';
@@ -67,6 +67,11 @@
   }
 
   /* ---------------- 棋盘 ---------------- */
+  /* 图案贴图：统一走 img，方便替换美术资源 */
+  function patImg(pat) {
+    return '<img class="pat" src="' + G.PAT_SRC(G.ICONS[pat]) + '" alt="" draggable="false" decoding="async">';
+  }
+
   function buildTiles(state) {
     st = state;
     D.board.innerHTML = '';
@@ -79,7 +84,7 @@
       el.style.setProperty('--tx', (t.ux * unitPx) + 'px');
       el.style.setProperty('--ty', (t.uy * unitPx) + 'px');
       el.style.zIndex = String(t.layer * 100 + t.uy);
-      el.innerHTML = '<svg viewBox="0 0 64 64"><use href="#i-' + G.ICONS[t.pat] + '"></use></svg>';
+      el.innerHTML = patImg(t.pat);
       el.__pat = t.pat;
       elMap[t.id] = el;
       frag.appendChild(el);
@@ -107,8 +112,8 @@
       if (!el) return;
       if (el.__pat !== t.pat) {
         el.__pat = t.pat;
-        var use = el.querySelector('use');
-        if (use) use.setAttribute('href', '#i-' + G.ICONS[t.pat]);
+        var img = el.querySelector('img.pat');
+        if (img) img.src = G.PAT_SRC(G.ICONS[t.pat]);
       }
       if (t.state === 'board') {
         if (el.parentNode !== D.board) {
@@ -193,7 +198,7 @@
     c.style.top = rect.top + 'px';
     c.style.width = rect.width + 'px';
     c.style.height = rect.height + 'px';
-    c.innerHTML = '<svg viewBox="0 0 64 64"><use href="#i-' + G.ICONS[pat] + '"></use></svg>';
+    c.innerHTML = patImg(pat);
     D.fly.appendChild(c);
     return c;
   }
@@ -421,11 +426,16 @@
   function hideResult() { U.byId('overlay').classList.remove('show'); }
 
   /* ---------------- 海报 ---------------- */
-  function iconData(name) {
-    var sym = U.byId('i-' + name);
-    var inner = sym ? sym.innerHTML : '';
-    return 'data:image/svg+xml;charset=utf-8,' +
-      encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">' + inner + '</svg>');
+  /* 牌面图标的 base64 数据在 js/icons-data.js，按需加载（≈330KB，别放首屏） */
+  function ensureIconData() {
+    if (G.ICON_DATA) return Promise.resolve();
+    return new Promise(function (res, rej) {
+      var s = document.createElement('script');
+      s.src = 'js/icons-data.js';
+      s.onload = function () { G.ICON_DATA ? res() : rej(new Error('icons-data empty')); };
+      s.onerror = function () { rej(new Error('icons-data 加载失败')); };
+      document.head.appendChild(s);
+    });
   }
 
   function rr(ctx, x, y, w, h, r) {
@@ -440,10 +450,12 @@
 
   function loadIcon(name) {
     return new Promise(function (res) {
+      var src = (G.ICON_DATA && G.ICON_DATA[name]) || '';
+      if (!src) { res(null); return; }
       var img = new Image();
       img.onload = function () { res(img); };
       img.onerror = function () { res(null); };
-      img.src = iconData(name);
+      img.src = src;
     });
   }
 
@@ -455,7 +467,9 @@
     var F = '"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif';
     var names = ['carrot', 'strawberry', 'sheep', 'corn', 'mushroom', 'grape'];
 
-    return Promise.all(names.map(loadIcon)).then(function (imgs) {
+    return ensureIconData().then(function () {
+      return Promise.all(names.map(loadIcon));
+    }).then(function (imgs) {
       var g = ctx.createLinearGradient(0, 0, W * 0.4, H);
       g.addColorStop(0, '#fffaf3');
       g.addColorStop(0.5, '#fff1dd');

@@ -28,7 +28,6 @@ body{
   -webkit-user-select:none; user-select:none;
   touch-action:manipulation;
 }
-.sprite{ position:absolute; width:0; height:0; overflow:hidden; }
 
 #app{
   position:fixed; inset:0;
@@ -58,7 +57,7 @@ body{
 }
 .logo-tiles .lt:nth-child(2){ transform:rotate(3deg) translateY(-6px); }
 .logo-tiles .lt:nth-child(3){ transform:rotate(8deg); }
-.logo-tiles svg{ width:40px; height:40px; }
+.logo-tiles img{ width:44px; height:44px; object-fit:contain; display:block; }
 .logo h1{
   margin:0; font-size:38px; letter-spacing:2px; font-weight:800;
   color:#e0462f;
@@ -124,26 +123,31 @@ body{
 }
 
 .tile{
-  position:absolute; left:0; top:0;
-  width:var(--tile); height:var(--tile);
-  border-radius:13px;
-  background:linear-gradient(180deg,#ffffff 0%,#fffaf3 100%);
-  box-shadow:0 0 0 2px #fff8ef, 0 3px 0 rgba(61,43,38,.10), 0 7px 14px rgba(61,43,38,.18);
+  /* 四周各留 1px 缝：同层相邻牌之间有 2px 空隙，牌堆不会糊成一张表格 */
+  position:absolute; left:1px; top:1px;
+  width:calc(var(--tile) - 2px); height:calc(var(--tile) - 2px);
+  border-radius:12px;
+  background:linear-gradient(180deg,#ffffff 0%,#fffcf7 100%);
+  /* 淡棕描边负责「牌边清晰」，两层投影负责「浮起」 */
+  box-shadow:0 0 0 1px rgba(122,86,62,.20),
+             0 2px 3px rgba(61,43,38,.13),
+             0 6px 13px rgba(61,43,38,.15);
   display:flex; align-items:center; justify-content:center;
   transform:translate3d(var(--tx,0px), var(--ty,0px), 0);
-  transition:filter .16s ease, opacity .16s ease;
+  transition:filter .16s ease, opacity .16s ease, box-shadow .16s ease;
   contain:layout style paint;
   cursor:pointer;
 }
-.tile svg{ width:76%; height:76%; display:block; pointer-events:none; }
+.tile img.pat{ width:86%; height:86%; object-fit:contain; display:block; pointer-events:none;
+  -webkit-user-drag:none; }
+/* 被压住的牌：不压暗图案（要让玩家能预判），只用一层极淡白雾 + 收弱的投影表示「在下层」 */
 .tile.covered{
-  filter:brightness(.86) saturate(.62);
-  box-shadow:0 0 0 2px #fff6ec, 0 1px 0 rgba(61,43,38,.07), 0 2px 4px rgba(61,43,38,.07);
+  box-shadow:0 0 0 1px rgba(122,86,62,.13), 0 1px 2px rgba(61,43,38,.07);
   cursor:default;
 }
 .tile.covered::after{
-  content:""; position:absolute; inset:0; border-radius:13px;
-  background:rgba(114,86,64,.13);
+  content:""; position:absolute; inset:0; border-radius:12px;
+  background:rgba(255,253,248,.34);
 }
 .tile.bump{ animation:bump .3s ease; }
 .tile.pop{ animation:pop .18s ease forwards; pointer-events:none; }
@@ -230,7 +234,7 @@ body{
 }
 .tile.in-slot.covered{ filter:none; }
 .tile.in-slot.covered::after{ display:none; }
-.tile.in-slot svg{ width:80%; height:80%; }
+.tile.in-slot img.pat{ width:88%; height:88%; }
 
 /* ---------------- 飞行层 ---------------- */
 #flyLayer{ position:fixed; inset:0; pointer-events:none; z-index:99999; overflow:hidden; }
@@ -241,7 +245,7 @@ body{
   display:flex; align-items:center; justify-content:center;
   will-change:transform, opacity;
 }
-.fly svg{ width:76%; height:76%; }
+.fly img.pat{ width:86%; height:86%; object-fit:contain; }
 
 /* ---------------- 结算 ---------------- */
 .overlay{
@@ -278,6 +282,8 @@ body{
 .btn.ghost2{ background:#fdf6ec; border-color:transparent; color:var(--ink2); }
 .btn:active{ transform:scale(.985); }
 
+/* 海报层要压住下面的结算层，否则两层文字会互相透 */
+#posterOverlay{ background:rgba(40,28,24,.86); backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px); }
 .poster-wrap{ display:flex; flex-direction:column; align-items:center; gap:12px; max-height:100%; }
 #posterImg{
   width:auto; max-width:100%; max-height:62dvh;
